@@ -11,6 +11,7 @@
 
 class Raven_Compat
 {
+
     public static function gethostname()
     {
         if (function_exists('gethostname')) {
@@ -111,7 +112,7 @@ class Raven_Compat
         }
 
         $isList = true;
-        for ($i = 0, reset($value); $i<count($value); $i++, next($value)) {
+        for ($i = 0, reset($value); true; $i++) {
             if (key($value) !== $i) {
                 $isList = false;
                 break;

@@ -69,6 +69,8 @@ class Raven_Tests_StacktraceTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(11, $frame["lineno"]);
         $this->assertEquals('include_once', $frame["function"]);
         $this->assertEquals('a_test($foo);', $frame["context_line"]);
+
+
     }
 
     public function testSimpleUnshiftedTrace()
@@ -106,6 +108,8 @@ class Raven_Tests_StacktraceTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('include_once', $frame["function"]);
         $this->assertEquals('friend', $frame['vars']['param1']);
         $this->assertEquals('a_test($foo);', $frame["context_line"]);
+
+
     }
 
     public function testShiftedCaptureVars()
@@ -148,45 +152,8 @@ class Raven_Tests_StacktraceTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('include_once', $frame["function"]);
         $this->assertEquals('a_test($foo);', $frame["context_line"]);
         $this->assertEquals($vars, $frame['vars']);
-    }
 
-    public function testDoesNotModifyCaptureVars()
-    {
-        $stack = array(
-            array(
-                "file" => dirname(__FILE__) . "/resources/a.php",
-                "line" => 11,
-                "function" => "a_test",
-                "args"=> array(
-                    "friend",
-                ),
-            ),
-            array(
-                "file" => dirname(__FILE__) . "/resources/b.php",
-                "line" => 3,
-                "args"=> array(
-                    "/tmp/a.php",
-                ),
-                "function" => "include_once",
-            ),
-        );
 
-        // PHP's errcontext as passed to the error handler contains REFERENCES to any vars that were in the global scope.
-        // Modification of these would be really bad, since if control is returned (non-fatal error) we'll have altered the state of things!
-        $originalFoo = "bloopblarp";
-        $iAmFoo = $originalFoo;
-        $vars = array(
-            "foo" => &$iAmFoo
-        );
-
-        $frames = Raven_Stacktrace::get_stack_info($stack, true, true, $vars, 5);
-
-        // Check we haven't modified our vars.
-        $this->assertEquals($originalFoo, $vars["foo"]);
-
-        $frame = $frames[1];
-        // Check that we did truncate the variable in our output
-        $this->assertEquals(5, strlen($frame['vars']['foo']));
     }
 
     public function testUnshiftedCaptureVars()
@@ -229,6 +196,8 @@ class Raven_Tests_StacktraceTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('include_once', $frame["function"]);
         $this->assertEquals($vars, $frame['vars']);
         $this->assertEquals('a_test($foo);', $frame["context_line"]);
+
+
     }
 
     public function testDoesFixFrameInfo()
@@ -244,19 +213,19 @@ class Raven_Tests_StacktraceTest extends PHPUnit_Framework_TestCase
         // just grab the last few frames
         $frames = array_slice($frames, -5);
         $frame = $frames[0];
-        $this->assertEquals('StacktraceTest.php:Raven_Tests_StacktraceTest', $frame['module']);
-        $this->assertEquals('testDoesFixFrameInfo', $frame['function']);
+        $this->assertEquals($frame['module'], 'StacktraceTest.php:Raven_Tests_StacktraceTest');
+        $this->assertEquals($frame['function'], 'testDoesFixFrameInfo');
         $frame = $frames[1];
-        $this->assertEquals('StacktraceTest.php', $frame['module']);
-        $this->assertEquals('raven_test_create_stacktrace', $frame['function']);
+        $this->assertEquals($frame['module'], 'StacktraceTest.php');
+        $this->assertEquals($frame['function'], 'raven_test_create_stacktrace');
         $frame = $frames[2];
-        $this->assertEquals('StacktraceTest.php', $frame['module']);
-        $this->assertEquals('raven_test_recurse', $frame['function']);
+        $this->assertEquals($frame['module'], 'StacktraceTest.php');
+        $this->assertEquals($frame['function'], 'raven_test_recurse');
         $frame = $frames[3];
-        $this->assertEquals('StacktraceTest.php', $frame['module']);
-        $this->assertEquals('raven_test_recurse', $frame['function']);
+        $this->assertEquals($frame['module'], 'StacktraceTest.php');
+        $this->assertEquals($frame['function'], 'raven_test_recurse');
         $frame = $frames[4];
-        $this->assertEquals('StacktraceTest.php', $frame['module']);
-        $this->assertEquals('raven_test_recurse', $frame['function']);
+        $this->assertEquals($frame['module'], 'StacktraceTest.php');
+        $this->assertEquals($frame['function'], 'raven_test_recurse');
     }
 }

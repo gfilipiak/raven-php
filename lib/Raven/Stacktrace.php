@@ -13,8 +13,7 @@ class Raven_Stacktrace
         'require_once',
     );
 
-    public static function get_stack_info($frames, $trace = false, $shiftvars = true, $errcontext = null,
-                            $frame_var_limit = Raven_Client::MESSAGE_LIMIT)
+    public static function get_stack_info($frames, $trace=false, $shiftvars=true, $errcontext = null)
     {
         /**
          * PHP's way of storing backstacks seems bass-ackwards to me
@@ -67,7 +66,7 @@ class Raven_Stacktrace
             } else {
                 if ($trace) {
                     if ($shiftvars) {
-                        $vars = self::get_frame_context($nextframe, $frame_var_limit);
+                        $vars = self::get_frame_context($nextframe);
                     } else {
                         $vars = self::get_caller_frame_context($frame);
                     }
@@ -76,7 +75,7 @@ class Raven_Stacktrace
                 }
             }
 
-            $data = array(
+            $frame = array(
                 'abs_path' => $abs_path,
                 'filename' => $context['filename'],
                 'lineno' => (int) $context['lineno'],
@@ -89,18 +88,10 @@ class Raven_Stacktrace
             // dont set this as an empty array as PHP will treat it as a numeric array
             // instead of a mapping which goes against the defined Sentry spec
             if (!empty($vars)) {
-                $cleanVars = array();
-                foreach ($vars as $key => $value) {
-                    if (is_string($value) || is_numeric($value)) {
-                        $cleanVars[$key] = substr($value, 0, $frame_var_limit);
-                    } else {
-                        $cleanVars[$key] = $value;
-                    }
-                }
-                $data['vars'] = $cleanVars;
+                $frame['vars'] = $vars;
             }
 
-            $result[] = $data;
+            $result[] = $frame;
         }
 
         return array_reverse($result);
@@ -119,9 +110,10 @@ class Raven_Stacktrace
             $i++;
         }
         return $args;
+
     }
 
-    public static function get_frame_context($frame, $frame_arg_limit = Raven_Client::MESSAGE_LIMIT)
+    public static function get_frame_context($frame)
     {
         // The reflection API seems more appropriate if we associate it with the frame
         // where the function is actually called (since we're treating them as function context)
@@ -133,12 +125,6 @@ class Raven_Stacktrace
             return array();
         }
 
-        if (strpos($frame['function'], '__lambda_func') !== false) {
-            return array();
-        }
-        if (isset($frame['class']) && $frame['class'] == 'Closure') {
-            return array();
-        }
         if (strpos($frame['function'], '{closure}') !== false) {
             return array();
         }
@@ -151,20 +137,16 @@ class Raven_Stacktrace
                 return array($frame['args'][0]);
             }
         }
-        try {
-            if (isset($frame['class'])) {
-                if (method_exists($frame['class'], $frame['function'])) {
-                    $reflection = new ReflectionMethod($frame['class'], $frame['function']);
-                } elseif ($frame['type'] === '::') {
-                    $reflection = new ReflectionMethod($frame['class'], '__callStatic');
-                } else {
-                    $reflection = new ReflectionMethod($frame['class'], '__call');
-                }
+        if (isset($frame['class'])) {
+            if (method_exists($frame['class'], $frame['function'])) {
+                $reflection = new ReflectionMethod($frame['class'], $frame['function']);
+            } elseif ($frame['type'] === '::') {
+                $reflection = new ReflectionMethod($frame['class'], '__callStatic');
             } else {
-                $reflection = new ReflectionFunction($frame['function']);
+                $reflection = new ReflectionMethod($frame['class'], '__call');
             }
-        } catch (ReflectionException $e) {
-            return array();
+        } else {
+            $reflection = new ReflectionFunction($frame['function']);
         }
 
         $params = $reflection->getParameters();
@@ -173,13 +155,6 @@ class Raven_Stacktrace
         foreach ($frame['args'] as $i => $arg) {
             if (isset($params[$i])) {
                 // Assign the argument by the parameter name
-                if (is_array($arg)) {
-                    foreach ($arg as $key => $value) {
-                        if (is_string($value) || is_numeric($value)) {
-                            $arg[$key] = substr($value, 0, $frame_arg_limit);
-                        }
-                    }
-                }
                 $args[$params[$i]->name] = $arg;
             } else {
                 // TODO: Sentry thinks of these as context locals, so they must be named
@@ -191,7 +166,7 @@ class Raven_Stacktrace
         return $args;
     }
 
-    private static function read_source_file($filename, $lineno, $context_lines = 5)
+    private static function read_source_file($filename, $lineno, $context_lines=5)
     {
         $frame = array(
             'prefix' => array(),
@@ -215,16 +190,6 @@ class Raven_Stacktrace
             $frame['lineno'] = $lineno = $matches[2];
         }
 
-        // In the case of an anonymous function, the filename is sent as:
-        // "</path/to/filename>(<lineno>) : runtime-created function"
-        // Extract the correct filename + linenumber from the string.
-        $matches = array();
-        $matched = preg_match("/^(.*?)\((\d+)\) : runtime-created function$/",
-            $filename, $matches);
-        if ($matched) {
-            $frame['filename'] = $filename = $matches[1];
-            $frame['lineno'] = $lineno = $matches[2];
-        }
 
         try {
             $file = new SplFileObject($filename);
@@ -245,7 +210,7 @@ class Raven_Stacktrace
                     break;
                 }
                 $file->next();
-            }
+             }
         } catch (RuntimeException $exc) {
             return $frame;
         }

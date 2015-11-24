@@ -20,14 +20,14 @@ class Raven_Tests_SerializerTest extends PHPUnit_Framework_TestCase
     {
         $input = array(1, 2, 3);
         $result = Raven_Serializer::serialize($input);
-        $this->assertEquals(array('1', '2', '3'), $result);
+        $this->assertEquals($result, array('1', '2', '3'));
     }
 
     public function testObjectsAreStrings()
     {
         $input = new Raven_StacktraceTestObject();
         $result = Raven_Serializer::serialize($input);
-        $this->assertEquals('Object Raven_StacktraceTestObject', $result);
+        $this->assertEquals($result, 'Object Raven_StacktraceTestObject');
     }
 
     public function testIntsAreInts()
@@ -35,7 +35,7 @@ class Raven_Tests_SerializerTest extends PHPUnit_Framework_TestCase
         $input = 1;
         $result = Raven_Serializer::serialize($input);
         $this->assertTrue(is_integer($result));
-        $this->assertEquals(1, $result);
+        $this->assertEquals($result, 1);
     }
 
     public function testRecursionMaxDepth()
@@ -43,6 +43,7 @@ class Raven_Tests_SerializerTest extends PHPUnit_Framework_TestCase
         $input = array();
         $input[] = &$input;
         $result = Raven_Serializer::serialize($input, 3);
-        $this->assertEquals(array(array(array('Array of length 1'))), $result);
+        $this->assertEquals($result, array(array(array('Array of length 1'))));
     }
+
 }

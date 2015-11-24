@@ -12,12 +12,10 @@
         }
     ],
     "require-dev": {
-        "fabpot/php-cs-fixer": "^1.8.0",
-        "phpunit/phpunit": "^4.6.6"
+        "phpunit/phpunit": "3.7.*"
     },
     "require": {
-        "php": ">=5.2.4",
-        "ext-curl": "*"
+        "php": ">=5.2.4"
     },
     "bin": [
         "bin/raven"
@@ -29,7 +27,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "0.14.x-dev"
+            "dev-master": "0.7.x-dev"
         }
     }
 }
